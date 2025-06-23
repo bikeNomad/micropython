@@ -185,7 +185,10 @@ soft_reset:
         }
     }
 
+    #if MICROPY_MODULE_FROZEN || MICROPY_VFS
 soft_reset_exit:
+    #endif
+
     mp_printf(MP_PYTHON_PRINTER, "MPY: soft reboot\n");
 
     #if MICROPY_PY_BLUETOOTH
