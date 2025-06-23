@@ -1,4 +1,5 @@
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 #include "shared/runtime/interrupt_char.h"
 
 #define MICROPY_BEGIN_ATOMIC_SECTION irq_lock
