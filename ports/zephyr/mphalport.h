@@ -52,7 +52,7 @@ static inline unsigned int mp_hal_pin_name(mp_hal_pin_obj_t pin) {
 }
 
 static inline void mp_hal_pin_open_drain(mp_hal_pin_obj_t pin) {
-    (void)gpio_pin_configure(pin->port, pin->pin, GPIO_OUTPUT | GPIO_OPEN_DRAIN | GPIO_INPUT);
+    (void)gpio_pin_configure(pin->port, pin->pin, GPIO_OUTPUT | GPIO_INPUT | GPIO_OPEN_DRAIN);
 }
 
 static inline void mp_hal_pin_od_low(mp_hal_pin_obj_t pin) {
