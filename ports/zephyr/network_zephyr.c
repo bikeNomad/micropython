@@ -64,7 +64,11 @@ static void network_zephyr_print(const mp_print_t *print, mp_obj_t self_in, mp_p
 static mp_obj_t network_zephyr_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 0, 0, false);
     network_zephyr_obj_t *self = (network_zephyr_obj_t *)&network_zephyr_eth_obj;
-    self->net_if = net_if_get_default();
+    struct net_if *net_if = net_if_get_default();
+    if (net_if == NULL) {
+        mp_raise_OSError(MP_ENODEV);
+    }
+    self->net_if = net_if;
     mod_network_register_nic(MP_OBJ_FROM_PTR(self));
     return MP_OBJ_FROM_PTR(self);
 }
