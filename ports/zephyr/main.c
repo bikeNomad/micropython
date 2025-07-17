@@ -96,7 +96,7 @@ void init_zephyr(void) {
 }
 
 #if MICROPY_VFS
-static int vfs_mount_and_chdir(const char *mount_point_str, qstr path_lib_qstr) {
+static int vfs_mount_and_chdir(mp_obj_t bdev, const char *mount_point_str, qstr path_lib_qstr) {
     mp_obj_t mount_point = mp_obj_new_str_from_cstr(mount_point_str);
     int ret = mp_vfs_mount_and_chdir_protected(bdev, mount_point);
     if (ret == 0) {
@@ -116,7 +116,7 @@ static void vfs_init(void) {
     #endif
     bdev = MP_OBJ_TYPE_GET_SLOT(&zephyr_disk_access_type, make_new)(&zephyr_disk_access_type, ARRAY_SIZE(args), 0, args);
     if ((bdev != NULL)) {
-        vfs_mount_and_chdir("/sd", MP_QSTR__slash_sd_slash_lib);
+        vfs_mount_and_chdir(bdev, "/sd", MP_QSTR__slash_sd_slash_lib);
     }
     #endif
 
@@ -124,7 +124,7 @@ static void vfs_init(void) {
     mp_obj_t args[] = { MP_OBJ_NEW_SMALL_INT(FIXED_PARTITION_ID(storage_partition)), MP_OBJ_NEW_SMALL_INT(4096) };
     bdev = MP_OBJ_TYPE_GET_SLOT(&zephyr_flash_area_type, make_new)(&zephyr_flash_area_type, ARRAY_SIZE(args), 0, args);
     if ((bdev != NULL)) {
-        vfs_mount_and_chdir("/flash", MP_QSTR__slash_flash_slash_lib);
+        vfs_mount_and_chdir(bdev, "/flash", MP_QSTR__slash_flash_slash_lib);
     }
     #endif
 
