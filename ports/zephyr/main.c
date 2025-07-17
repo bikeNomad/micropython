@@ -60,6 +60,7 @@
 
 #include "modmachine.h"
 #include "modzephyr.h"
+#include "extmod/modnetwork.h"
 
 static char heap[MICROPY_HEAP_SIZE];
 
@@ -147,6 +148,10 @@ soft_reset:
     #endif
     mp_init();
 
+    #if MICROPY_PY_NETWORK
+    mod_network_init();
+    #endif
+
     #ifdef CONFIG_USB_DEVICE_STACK
     usb_enable(NULL);
     #endif
@@ -193,6 +198,9 @@ soft_reset_exit:
 
     #if MICROPY_PY_BLUETOOTH
     mp_bluetooth_deinit();
+    #endif
+    #if MICROPY_PY_NETWORK
+    mod_network_deinit();
     #endif
     #if MICROPY_PY_MACHINE
     machine_pin_deinit();

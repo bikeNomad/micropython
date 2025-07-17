@@ -48,13 +48,13 @@
 const mod_network_nic_protocol_t mod_network_nic_protocol_zephyr;
 
 typedef struct _network_zephyr_obj_t {
-    mp_obj_base_t base;
+    const mp_obj_base_t base;
     struct net_if *net_if;
 } network_zephyr_obj_t;
 
 const mp_obj_type_t mp_network_zephyr_type;
 
-static const network_zephyr_obj_t network_zephyr_eth_obj = { { &mp_network_zephyr_type }, NULL };
+static network_zephyr_obj_t network_zephyr_eth_obj = { { &mp_network_zephyr_type }, NULL };
 
 static void network_zephyr_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     network_zephyr_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -382,7 +382,7 @@ const mod_network_nic_protocol_t mod_network_nic_protocol_zephyr = {
 
 MP_DEFINE_CONST_OBJ_TYPE(
     mp_network_zephyr_type,
-    MP_QSTR_ZEPHYR,
+    MP_QSTR_LAN,
     MP_TYPE_FLAG_NONE,
     make_new, network_zephyr_make_new,
     print, network_zephyr_print,
