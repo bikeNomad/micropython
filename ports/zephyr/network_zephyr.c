@@ -110,6 +110,67 @@ static mp_obj_t network_zephyr_ifconfig(size_t n_args, const mp_obj_t *args) {
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(network_zephyr_ifconfig_obj, 1, 2, network_zephyr_ifconfig);
 
+static mp_obj_t network_zephyr_status(mp_obj_t self_in) {
+    network_zephyr_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if (net_if_is_up(self->net_if)) {
+        if (net_if_flag_is_set(self->net_if, NET_IF_RUNNING)) {
+            return MP_OBJ_NEW_SMALL_INT(3); // link up, network up
+        } else {
+            return MP_OBJ_NEW_SMALL_INT(2); // network up, link down
+        }
+    } else {
+        return MP_OBJ_NEW_SMALL_INT(1); // network down
+    }
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(network_zephyr_status_obj, network_zephyr_status);
+
+static mp_obj_t network_zephyr_config(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+    network_zephyr_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+
+    if (kwargs->used == 0) {
+        // Get config value
+        if (n_args != 2) {
+            mp_raise_TypeError(MP_ERROR_TEXT("must query one param"));
+        }
+
+        switch (mp_obj_str_get_qstr(args[1])) {
+            case MP_QSTR_mac: {
+                struct net_linkaddr *linkaddr = net_if_get_link_addr(self->net_if);
+                return mp_obj_new_bytes(linkaddr->addr, linkaddr->len);
+            }
+            default:
+                mp_raise_ValueError(MP_ERROR_TEXT("unknown config param"));
+        }
+    } else {
+        // Set config value(s)
+        if (n_args != 1) {
+            mp_raise_TypeError(MP_ERROR_TEXT("can't specify pos and kw args"));
+        }
+
+        for (size_t i = 0; i < kwargs->alloc; ++i) {
+            if (MP_MAP_SLOT_IS_FILLED(kwargs, i)) {
+                mp_map_elem_t *e = &kwargs->table[i];
+                switch (mp_obj_str_get_qstr(e->key)) {
+                    case MP_QSTR_mac: {
+                        mp_buffer_info_t buf;
+                        mp_get_buffer_raise(e->value, &buf, MP_BUFFER_READ);
+                        if (buf.len != 6) {
+                            mp_raise_ValueError(NULL);
+                        }
+                        net_if_set_link_addr(self->net_if, buf.buf, buf.len, NET_LINK_ETHERNET);
+                        break;
+                    }
+                    default:
+                        mp_raise_ValueError(MP_ERROR_TEXT("unknown config param"));
+                }
+            }
+        }
+
+        return mp_const_none;
+    }
+}
+static MP_DEFINE_CONST_FUN_OBJ_KW(network_zephyr_config_obj, 1, network_zephyr_config);
+
 static int network_zephyr_gethostbyname(mp_obj_t nic, const char *name, mp_uint_t len, uint8_t *out_ip) {
     (void)nic;
     (void)len;
@@ -293,6 +354,8 @@ static int network_zephyr_ioctl(mod_network_socket_obj_t *socket, mp_uint_t requ
 static const mp_rom_map_elem_t network_zephyr_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_active), MP_ROM_PTR(&network_zephyr_active_obj) },
     { MP_ROM_QSTR(MP_QSTR_ifconfig), MP_ROM_PTR(&network_zephyr_ifconfig_obj) },
+    { MP_ROM_QSTR(MP_QSTR_status), MP_ROM_PTR(&network_zephyr_status_obj) },
+    { MP_ROM_QSTR(MP_QSTR_config), MP_ROM_PTR(&network_zephyr_config_obj) },
 };
 static MP_DEFINE_CONST_DICT(network_zephyr_locals_dict, network_zephyr_locals_dict_table);
 
