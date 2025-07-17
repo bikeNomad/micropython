@@ -55,8 +55,14 @@ set(MICROPY_SOURCE_PORT
     zephyr_device.c
     zephyr_storage.c
     mpthreadport.c
+    network_zephyr.c
 )
 list(TRANSFORM MICROPY_SOURCE_PORT PREPEND ${MICROPY_PORT_DIR}/)
+
+set(MICROPY_SOURCE_SHARED_NET
+    shared/netutils/netutils.c
+)
+list(TRANSFORM MICROPY_SOURCE_SHARED_NET PREPEND ${MICROPY_DIR}/)
 
 set(MICROPY_SOURCE_SHARED
     libc/printf.c
@@ -94,6 +100,7 @@ set(MICROPY_SOURCE_QSTR
     ${MICROPY_SOURCE_PY}
     ${MICROPY_SOURCE_EXTMOD}
     ${MICROPY_SOURCE_SHARED}
+    ${MICROPY_SOURCE_SHARED_NET}
     ${MICROPY_SOURCE_DRIVERS}
     ${MICROPY_SOURCE_LIB}
     ${MICROPY_SOURCE_PORT}

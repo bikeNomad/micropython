@@ -84,7 +84,12 @@
 #ifdef CONFIG_NETWORKING
 // If we have networking, we likely want errno comfort
 #define MICROPY_PY_ERRNO            (1)
+#define MICROPY_PY_NETWORK          (1)
+#define MICROPY_PY_NETWORK_ZEPHYR   (1)
+#define MICROPY_PY_NETWORK_INCLUDEFILE "ports/zephyr/network_zephyr.h"
 #define MICROPY_PY_SOCKET           (1)
+#define MICROPY_PORT_NETWORK_INTERFACES \
+    { MP_ROM_QSTR(MP_QSTR_LAN), MP_ROM_PTR(&mp_network_zephyr_type) },
 #endif
 #ifdef CONFIG_BT
 #define MICROPY_PY_BLUETOOTH        (1)
