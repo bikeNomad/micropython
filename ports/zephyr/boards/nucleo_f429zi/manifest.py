@@ -1,0 +1,6 @@
+# freeze("../../modules")
+include("$(MPY_DIR)/extmod/asyncio")
+require("upysh")
+require("aiorepl")
+require("ntptime")
+require("bundle-networking")

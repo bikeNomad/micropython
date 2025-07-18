@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Ned Konz <ned@metamagix.tech>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* delete the already defined partitions and define new ones */
+/delete-node/ &scratch_partition;
+/delete-node/ &boot_partition;
+/* /delete-node/ &slot0_partition; */
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* application slot: 512 KB */
+		app_partition: partition@0 {
+			label = "app";
+			reg = <0x00000000 DT_SIZE_K(512)>;
+			read-only;
+		};
+
+		/* storage slot: 1536 KB */
+		storage_partition: partition@80000 {
+			label = "storage";
+			reg = <0x00080000 DT_SIZE_K(1536)>;
+		};
+	};
+};
