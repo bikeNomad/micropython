@@ -44,6 +44,8 @@
 
 #include "ports/zephyr/network_zephyr.h"
 
+static struct dns_resolve_context *dns_ctx;
+
 // Forward-declare the protocol table.
 const mod_network_nic_protocol_t mod_network_nic_protocol_zephyr;
 
@@ -70,6 +72,10 @@ static mp_obj_t network_zephyr_make_new(const mp_obj_type_t *type, size_t n_args
     }
     self->net_if = net_if;
     mod_network_register_nic(MP_OBJ_FROM_PTR(self));
+    
+    // Close default context first
+    dns_ctx = dns_resolve_get_default();
+
     return MP_OBJ_FROM_PTR(self);
 }
 
@@ -101,7 +107,9 @@ static mp_obj_t network_zephyr_ifconfig(size_t n_args, const mp_obj_t *args) {
                     mp_obj_new_str(net_addr_ntop(AF_INET, &ipv4->unicast[0].ipv4.address.in_addr, ip_buf, sizeof(ip_buf)), strlen(ip_buf)),
                     mp_obj_new_str(net_addr_ntop(AF_INET, &ipv4->unicast[0].netmask, ip_buf, sizeof(ip_buf)), strlen(ip_buf)),
                     mp_obj_new_str(net_addr_ntop(AF_INET, &ipv4->gw, ip_buf, sizeof(ip_buf)), strlen(ip_buf)),
-                    mp_obj_new_str("0.0.0.0", 7),
+                    mp_obj_new_str(
+                        net_addr_ntop(AF_INET, &((struct sockaddr_in *)&dns_ctx->servers[0].dns_server)->sin_addr, ip_buf, sizeof(ip_buf)),
+                        strlen(ip_buf))
                 };
                 return mp_obj_new_tuple(4, tuple);
             }
@@ -109,6 +117,29 @@ static mp_obj_t network_zephyr_ifconfig(size_t n_args, const mp_obj_t *args) {
         return mp_const_none;
     } else {
         // set settings
+        mp_obj_t *items;
+        mp_obj_get_array_fixed_n(args[1], 4, &items);
+
+        struct in_addr ip, nm, gw;
+        netutils_parse_ipv4_addr(items[0], (byte *)&ip, NETUTILS_BIG);
+        netutils_parse_ipv4_addr(items[1], (byte *)&nm, NETUTILS_BIG);
+        netutils_parse_ipv4_addr(items[2], (byte *)&gw, NETUTILS_BIG);
+
+        struct net_if_addr *ifaddr = net_if_ipv4_addr_add(self->net_if, &ip, NET_ADDR_MANUAL, 0);
+        if (ifaddr == NULL) {
+            mp_raise_OSError(MP_EIO);
+        }
+        net_if_ipv4_set_netmask_by_addr(self->net_if, &ifaddr->address.in_addr, &nm);
+        net_if_ipv4_set_gw(self->net_if, &gw);
+
+        // Set DNS server
+        const char *dns_server = mp_obj_str_get_str(items[3]);
+        const char *dns_servers[] = { dns_server, NULL };
+        int err = dns_resolve_reconfigure(dns_ctx, dns_servers, NULL);
+        if (err < 0) {
+            mp_raise_OSError(err);
+        }
+
         return mp_const_none;
     }
 }
