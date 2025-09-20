@@ -122,8 +122,10 @@ static void vfs_init(void) {
     if ((bdev != NULL)) {
         mount_point = mp_obj_new_str_from_cstr(mount_point_str);
         ret = mp_vfs_mount_and_chdir_protected(bdev, mount_point);
+        if (ret != 0) {
+            // If this failed, make a new file system and try to mount again
+        }
         mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(path_lib_qstr));
-        // TODO: if this failed, make a new file system and try to mount again
     }
 }
 #endif // MICROPY_VFS
@@ -157,7 +159,8 @@ soft_reset:
     #endif
 
     #if MICROPY_VFS
-    vfs_init();
+    // Mount and/or create the filesystem
+    pyexec_frozen_module("_boot.py", false);
     #endif
 
     #if MICROPY_MODULE_FROZEN || MICROPY_VFS
