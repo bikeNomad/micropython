@@ -207,10 +207,6 @@ static mp_int_t mp_machine_adc_read_uv(machine_adc_obj_t *self) {
 }
 #endif
 
-#if MICROPY_PY_MACHINE_ADC_ATTEN_WIDTH
-static void mp_machine_adc_atten_set(machine_adc_obj_t *self, mp_int_t atten);
-static void mp_machine_adc_width_set(machine_adc_obj_t *self, mp_int_t width);
-#endif
 
 #if MICROPY_PY_MACHINE_ADC_READ
 static mp_int_t mp_machine_adc_read(machine_adc_obj_t *self) {
