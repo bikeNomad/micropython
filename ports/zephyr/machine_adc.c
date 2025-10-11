@@ -46,7 +46,7 @@
  *
  *  / {
  *      zephyr,user {
- *          io-channels = <&adc 0>, <&adc 1>, <&adc 4>, <&adc 5>, <&adc 7>;
+ *          io-channels = <&adc 0>;
  *      };
  *  };
  *
@@ -67,7 +67,6 @@
  *
  */
 
-// #include "extmod/modmachine.h" // included from extmod/machine_adc.c
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -79,8 +78,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/adc.h>
 #include "py/mphal.h"
-#include "extmod/modmachine.h"
-#include "modmachine.h"
 #include "zephyr_device.h"
 
 
@@ -118,7 +115,6 @@ typedef struct _machine_adc_obj_t {
     const struct adc_dt_spec *spec; // ADC device channel specification
 } machine_adc_obj_t;
 
-// The port must provide implementations of these low-level ADC functions.
 
 static void mp_machine_adc_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_adc_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -142,7 +138,7 @@ static mp_obj_t mp_machine_adc_make_new(const mp_obj_type_t *type, size_t n_args
         int channel_id = mp_obj_get_int(items[1]);
         const struct device *wanted_port = zephyr_device_find(items[0]);
 
-        /* Find the desired channel by device name and channel ID */
+        // Find the desired channel by device name and channel ID
         struct adc_dt_spec const *wanted_adc_channel = NULL;
 
         for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
@@ -158,12 +154,12 @@ static mp_obj_t mp_machine_adc_make_new(const mp_obj_type_t *type, size_t n_args
         }
 
         if (!adc_is_ready_dt(wanted_adc_channel)) {
-            mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("ADC device (%s) not ready"), dev_name);
+            mp_raise_OSError(MP_EIO);
         }
 
         int err = adc_channel_setup_dt(wanted_adc_channel);
         if (err < 0) {
-            mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("Could not setup ADC %s channel %d (err=%d)"), dev_name, channel_id, err);
+            mp_raise_OSError(MP_EINVAL);
         }
 
         self = mp_obj_malloc(machine_adc_obj_t, &machine_adc_type);
@@ -180,12 +176,12 @@ static mp_obj_t mp_machine_adc_make_new(const mp_obj_type_t *type, size_t n_args
 static mp_uint_t zephyr_adc_read(const struct adc_dt_spec *spec) {
     int err = adc_sequence_init_dt(spec, &adc_sequence);
     if (err < 0) {
-        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("ADC %s channel %d invalid (err=%d)"), spec->dev->name, spec->channel_id, err);
+        mp_raise_OSError(MP_EOPNOTSUPP);
     }
 
     err = adc_read_dt(spec, &adc_sequence);
     if (err < 0) {
-        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("ADC %s channel %d read failed (err=%d)"), spec->dev->name, spec->channel_id, err);
+        mp_raise_OSError(MP_EIO);
     }
 
     return (mp_uint_t)sample_buffer; // Return the read value as a 16-bit integer
@@ -200,25 +196,12 @@ static mp_int_t mp_machine_adc_read_u16(machine_adc_obj_t *self) {
 }
 
 
-#if MICROPY_PY_MACHINE_ADC_INIT
-static void mp_machine_adc_init_helper(machine_adc_obj_t *self, size_t n_pos_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
-#endif
-
-#if MICROPY_PY_MACHINE_ADC_DEINIT
-static void mp_machine_adc_deinit(machine_adc_obj_t *self);
-#endif
-
-#if MICROPY_PY_MACHINE_ADC_BLOCK
-static mp_obj_t mp_machine_adc_block(machine_adc_obj_t *self);
-#endif
-
 #if MICROPY_PY_MACHINE_ADC_READ_UV
 static mp_int_t mp_machine_adc_read_uv(machine_adc_obj_t *self) {
     int32_t raw = (int32_t)zephyr_adc_read(self->spec);
     int err = adc_raw_to_millivolts_dt(self->spec, &raw);
     if (err < 0) {
-        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("ADC %s channel %d uv conversion failed (err=%d)"),
-            self->name, self->spec->channel_id, err);
+        mp_raise_OSError(MP_EOPNOTSUPP);
     }
     return (mp_int_t)raw * 1000UL; // Convert to microvolts
 }
